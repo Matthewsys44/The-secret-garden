@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Secret Garden Jeopardy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:system-ui,sans-serif;background:#111;color:#fff;display:flex;flex-direction:column;min-height:100dvh}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#000;border-bottom:3px solid #FC0;flex-wrap:wrap;gap:6px}
+h1{font-size:clamp(.95rem,2.6vw,1.45rem);color:#FC0}
+button{cursor:pointer;font-weight:bold;border-radius:6px;border:none}
+.nav{background:#2d2d3a;color:#fff;padding:6px 8px;font-size:.78rem;border:1px solid #555}.nav.on{background:#FC0;color:#000}
+.wrap{flex:1;display:flex;padding:8px}
+.board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:auto repeat(5,1fr);gap:6px;width:100%;max-width:1200px;margin:auto}
+.cat,.card{background:#060CE9;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid #000;border-radius:6px}
+.cat{font-weight:800;padding:10px 4px;font-size:clamp(.85rem,2.3vw,1.4rem);text-transform:uppercase}
+.card{color:#FC0;font-weight:900;font-size:clamp(1.2rem,3.5vw,2.1rem);min-height:50px}.card.used{background:#040766;color:transparent}
+.teams{background:#000;border-top:3px solid #FC0;padding:6px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap}
+.tbox{background:#181824;border:2px solid #060CE9;border-radius:8px;padding:5px 8px;min-width:125px;flex:1 1 135px;max-width:220px;text-align:center}
+.tname{background:none;border:none;border-bottom:1px dashed #666;color:#fff;font-weight:bold;text-align:center;width:100%;font-size:.9rem}
+.tscore{font-size:1.25rem;font-weight:900;color:#FC0;margin:2px 0}
+.tadj{display:flex;justify-content:center;gap:4px}.tadj button{background:#333;color:#fff;padding:3px 6px;font-size:.75rem}.tadj .pen{background:#b02a37}
+.modal{position:fixed;inset:0;background:#060CE9;display:none;flex-direction:column;justify-content:space-between;align-items:center;padding:18px;z-index:99;text-align:center;overflow-y:auto}.modal.open{display:flex}
+.mtop{width:100%;max-width:900px;display:flex;justify-content:space-between;border-bottom:2px solid rgba(255,255,255,.25);padding-bottom:8px;font-weight:bold;font-size:clamp(1rem,2.6vw,1.4rem)}.mtop span:first-child{color:#FC0;text-transform:uppercase}
+.mbody{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;max-width:900px;gap:14px;padding:10px 0}
+.clue{font-size:clamp(1.3rem,3.8vw,2.5rem);font-weight:bold;line-height:1.3}
+.ans{font-size:clamp(1.1rem,2.8vw,1.9rem);color:#FC0;font-weight:bold;background:rgba(0,0,0,.5);padding:12px 18px;border-radius:8px;border:2px solid #FC0;display:none}.ans.show{display:block}
+.dd{background:#FC0;color:#000;font-size:clamp(1.6rem,4.5vw,2.8rem);font-weight:900;padding:12px 24px;border-radius:10px}
+.wager{font-size:1.2rem;font-weight:bold;padding:6px;width:130px;text-align:center;border-radius:6px;border:none}
+.sbox{display:none;flex-direction:column;gap:6px;background:rgba(0,0,0,.35);padding:8px;border-radius:8px;width:100%;max-width:850px}.sbox.show{display:flex}
+.sbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.sgrp{display:flex;align-items:center;background:#1a1a26;border-radius:6px;overflow:hidden;border:1px solid #555}.sgrp span{padding:5px 8px;font-weight:bold;font-size:.85rem}
+.plus{background:#28a745;color:#fff;padding:7px 10px}.minus{background:#dc3545;color:#fff;padding:7px 10px}.mpen{background:#842029;color:#fff;padding:7px 9px}
+.mfoot{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}.mfoot button{padding:10px 18px;font-size:1rem;min-width:130px}.rev{background:#FC0;color:#000}.done{background:#333;color:#fff;border:1px solid #666}
+</style></head>
+<body>
+<header><h1>THE SECRET GARDEN</h1><div style="display:flex;gap:4px;flex-wrap:wrap"><button class="nav on" id="r1" onclick="setR(1)">Ch. 1–5</button><button class="nav" id="r2" onclick="setR(2)">Ch. 6–10</button><button class="nav" id="r3" onclick="setR(3)">Ch. 11–25</button><button class="nav" id="r4" onclick="setR(4)">Ch. 26–27</button><button class="nav" id="r5" onclick="setR(5)">All Book</button><button class="nav" onclick="modT(-1)">-Team</button><button class="nav" onclick="modT(1)">+Team</button><button class="nav" onclick="rst()">Reset</button></div></header>
+<div class="wrap"><div class="board" id="board"></div></div><div class="teams" id="teams"></div>
+<div class="modal" id="modal"><div class="mtop"><span id="mcat"></span><span id="mval"></span></div><div class="mbody"><div id="ddbox" style="display:none;flex-direction:column;align-items:center;gap:12px"><div class="dd">DAILY DOUBLE!</div><input type="number" id="win" class="wager" value="200" min="50" step="50"><button class="rev" style="padding:8px 18px" onclick="startDD()">Show Clue</button></div><div class="clue" id="mclue"></div><div class="ans" id="mans"></div><div class="sbox" id="sbox"><div style="font-size:.8rem;color:#ddd">AWARD, DEDUCT <span id="apts"></span> PTS, OR PENALTY:</div><div class="sbtns" id="sbtns"></div></div></div><div class="mfoot"><button class="rev" id="revbtn" onclick="showAns()">Show Answer</button><button class="done" onclick="closeMod()">Back to Board</button></div></div>
+<script>
+const R={
+1:[
+{c:"Life in India",q:[{q:"Country where Mary Lennox is born and raised for the first 9 years.",a:"India"},{q:"Disease that kills Mary's parents and servants.",a:"Cholera"},{q:"What the English children chant to tease sour, spoiled Mary.",a:"'Mistress Mary, quite contrary'"},{q:"Title of Mary's Indian nursemaid who cared for her before the outbreak.",a:"Ayah"},{q:"Clergyman's family Mary stays with briefly before sailing to England.",a:"The Crawfords"}]},
+{c:"Journey to Yorkshire",q:[{q:"Strict housekeeper who escorts Mary from London to Yorkshire.",a:"Mrs. Medlock"},{q:"Name of Mary's rich, hunchbacked uncle who owns the manor.",a:"Archibald Craven"},{q:"Wide, windy, treeless land Mary crosses to reach Misselthwaite Manor.",a:"The Yorkshire moor"},{q:"Approximate number of rooms in Misselthwaite Manor (mostly locked).",a:"Nearly 100 rooms"},{q:"Why Mr. Craven is almost never at Misselthwaite Manor.",a:"He travels constantly after his wife's death"}]},
+{c:"First Days at Manor",q:[{q:"Young Yorkshire maid who is shocked Mary cannot dress herself.",a:"Martha Sowerby"},{q:"Grumpy old gardener Mary meets outside in the kitchen gardens.",a:"Ben Weatherstaff"},{q:"Friendly red-breasted bird that becomes Mary's first friend.",a:"The robin"},{q:"Number of years the secret garden has been locked up.",a:"10 years"},{q:"What Mr. Craven did with the key to the secret garden after locking it.",a:"Buried it"}]}
+],
+2:[
+{c:"Story & Setting",q:[{q:"Author of The Secret Garden.",a:"Frances Hodgson Burnett"},{q:"Specific estate in England where the story is set.",a:"Misselthwaite Manor"},{q:"Time period (centuries) when the story takes place.",a:"Late 1800s / 1900s"},{q:"Present Martha's mother bought for Mary with Martha's money.",a:"A skipping rope"},{q:"5 main characters in this part of the story.",a:"Mary, Martha, Mr. Craven, Ben Weatherstaff, Mrs. Medlock"}]},
+{c:"Inside the Manor",q:[{q:"Who was in Mary's room each morning when she woke up?",a:"Martha"},{q:"How Mary entertained herself and what room she decided to find.",a:"Read and find the library"},{q:"Sound Mary heard (blamed on wind or a maid with a toothache).",a:"A child crying"},{q:"Where Mary wanted to go with Martha.",a:"Martha's cottage"},{q:"Besides going outside & skipping, what made Mary stronger and eat all her food?",a:"Eating more"}]},
+{c:"The Secret Garden",q:[{q:"Bird in the garden with Mary that led her to the key.",a:"The robin"},{q:"What was covering the door to the secret garden?",a:"Ivy vines"},{q:"Why Mr. Craven hated the garden (which Mrs. Craven cared for).",a:"His wife died in it"},{q:"What Mary did around the 'green things sticking up' on day one.",a:"Pulled weeds / made space"},{q:"Two things Martha asked Dickon to get for Mary.",a:"Seeds and gardening tools"}]}
+],
+3:[
+{c:"Dickon & Friends",q:[{q:"Martha's 12-year-old brother who tames wild moor animals.",a:"Dickon"},{q:"Two wild animals that follow Dickon on the moor.",a:"Captain (fox), Soot (crow), Nut/Shell (squirrels)"},{q:"Color of the rose wood that Dickon proves is still alive.",a:"Gray"},{q:"Wise mother of Martha & Dickon who sends milk and buns.",a:"Susan Sowerby"},{q:"What Mr. Craven tells Mary she may have before leaving for Europe.",a:"'A bit of earth'"}]},
+{c:"Colin Craven",q:[{q:"Secret cousin Mary finds crying in a bedroom at night.",a:"Colin Craven"},{q:"What Colin fears will grow on his back like his father.",a:"A hunchback (lump)"},{q:"What Mary proves when she checks Colin's back during a tantrum.",a:"There is nothing wrong with his back"},{q:"How Mary and Dickon take Colin outdoors to the garden.",a:"In a wheelchair"},{q:"Name Colin gives the positive power of nature helping him heal.",a:"'Magic'"}]},
+{c:"Garden Secrets",q:[{q:"Plant Colin puts in the garden to symbolize his new life.",a:"A rosebush (rose)"},{q:"Grumpy gardener who peeks over the wall and sees Colin stand.",a:"Ben Weatherstaff"},{q:"Who asked Ben Weatherstaff to keep tending the garden before dying?",a:"Mrs. Craven (Lilias)"},{q:"Who delivers secret food so Mrs. Medlock won't see their appetites?",a:"Dickon (from Susan Sowerby)"},{q:"Who Colin wants to keep his walking a secret from until he returns.",a:"His father (Mr. Craven)"}]}
+],
+4:[
+{c:"Ch. 26: Mother Visits",q:[{q:"Song/hymn Dickon leads the children in singing around the tree.",a:"The Doxology ('Praise God from whom all blessings flow')"},{q:"Special visitor who enters the secret garden and hugs Colin in Ch. 26.",a:"Susan Sowerby"},{q:"What Colin calls Susan Sowerby when he hugs her.",a:"'Mother'"},{q:"Secret exercise Colin practices in his room so he can surprise his father.",a:"Walking and running"},{q:"What Susan Sowerby writes a letter telling Mr. Craven to do.",a:"Come home at once"}]},
+{c:"Ch. 27: Mr. Craven",q:[{q:"Country/region in Europe where Mr. Craven is wandering in Ch. 27.",a:"Austria / Lake Como (Europe)"},{q:"Whose voice calls to Mr. Craven in a dream saying, 'In the garden!'?",a:"His late wife, Lilias (Mrs. Craven)"},{q:"What Mr. Craven notices is blooming around the manor when he returns.",a:"Roses"},{q:"What happens the moment Mr. Craven opens the secret garden door.",a:"Colin runs out straight into his arms"},{q:"How Mr. Craven and Colin walk back to the manor at the end of the book.",a:"Side by side (with Colin walking/running normally)"}]},
+{c:"Ending & Reactions",q:[{q:"Who is waiting at the manor door in total shock to see Colin walking?",a:"Mrs. Medlock (and the servants)"},{q:"What Colin declares to his father when they crash into each other.",a:"'Father, I'm Colin!'"},{q:"How Mr. Craven's attitude changes at the end of Chapter 27.",a:"His gloom vanishes and he laughs/smiles again"},{q:"Who receives credit from Colin for bringing him back to life.",a:"Mary, Dickon, Magic, and the Secret Garden"},{q:"How Colin's appearance has changed since Chapter 13.",a:"Tall, rosy-cheeked, healthy, and strong"}]}
+],
+5:[
+{c:"Character Arcs",q:[{q:"How Mary changes from Chapter 1 to Chapter 27.",a:"From sickly, sour, and selfish to healthy, kind, and caring"},{q:"How Colin changes from Chapter 13 to Chapter 27.",a:"From a hysterical invalid to a strong, joyful boy who walks"},{q:"Character who connects nature, animals, and both children.",a:"Dickon Sowerby"},{q:"Name of Mr. Craven's late wife whose death caused him to lock the garden.",a:"Lilias Craven"},{q:"Doctor who stands to inherit Misselthwaite Manor if Colin dies.",a:"Dr. Craven"}]},
+{c:"Symbols & Objects",q:[{q:"Animal that leads Mary to both the buried key and the hidden door.",a:"The robin"},{q:"Toy that builds Mary's physical strength and brings color to her cheeks.",a:"The skipping rope"},{q:"How Mary finds the buried key to the secret garden.",a:"The robin hops in a freshly dug hole / dog-hole"},{q:"How Mary finds the hidden door behind the ivy.",a:"A gust of wind blows the ivy aside"},{q:"Flowers that fill the secret garden and symbolize Mrs. Craven's love.",a:"Roses"}]},
+{c:"Themes & Setting",q:[{q:"County in Northern England where Misselthwaite Manor is located.",a:"Yorkshire"},{q:"Main theme shown as both the garden and the children come back to life.",a:"Healing / renewal through nature and friendship"},{q:"What Colin calls the unseen force that makes seeds grow and heals him.",a:"'Magic'"},{q:"How many children are in the Sowerby family living on the moor.",a:"12 children"},{q:"Year The Secret Garden was originally published by Frances Hodgson Burnett.",a:"1911"}]}
+]};
+let r=1,p=0,cc=null,dd={c:1,r:2},G=[],T=[{n:"Team 1",s:0},{n:"Team 2",s:0},{n:"Team 3",s:0}];
+const $=i=>document.getElementById(i),shuf=a=>[...a].sort(()=>Math.random()-.5);
+function dT(){$("teams").innerHTML=T.map((t,i)=>`<div class="tbox"><input class="tname" value="${t.n}" onchange="T[${i}].n=this.value||'Team ${i+1}'"><div class="tscore" style="color:${t.s<0?'#ff6b6b':'#FC0'}">${t.s}</div><div class="tadj"><button class="pen" onclick="T[${i}].s-=100;dT()">Penalty -100</button><button onclick="T[${i}].s+=100;dT()">+100</button></div></div>`).join("")}
+function modT(d){if(T.length+d<2||T.length+d>6)return;d>0?T.push({n:`Team ${T.length+1}`,s:0}):T.pop();dT()}
+function dB(){dd={c:Math.floor(Math.random()*3),r:Math.floor(Math.random()*5)};G=shuf(R[r]).map(x=>({c:x.c,q:shuf(x.q).map((item,idx)=>({...item,v:(idx+1)*100}))}));const b=$("board");b.innerHTML="";G.forEach(x=>{let d=document.createElement("div");d.className="cat";d.textContent=x.c;b.appendChild(d)});for(let y=0;y<5;y++)for(let x=0;x<3;x++){let o=G[x].q[y],d=document.createElement("div");d.className="card";d.textContent=o.v;let k=(x===dd.c&&y===dd.r);d.onclick=()=>op(G[x].c,o,d,k);b.appendChild(d)}}
+function setR(n){r=n;[1,2,3,4,5].forEach(x=>$("r"+x).classList.toggle("on",x===n));dB()}
+function op(c,o,e,k){if(e.classList.contains("used"))return;cc=e;p=o.v;$("mcat").textContent=c;$("mval").textContent=k?"DAILY DOUBLE":p;$("mclue").textContent=o.q;$("mans").textContent=o.a;$("mans").classList.remove("show");$("sbox").classList.remove("show");$("ddbox").style.display=k?"flex":"none";$("mclue").style.display=k?"none":"block";$("revbtn").style.display=k?"none":"inline-block";$("win").value=p;$("modal").classList.add("open")}
+function startDD(){let w=parseInt($("win").value,10);if(w>0)p=w;$("mval").textContent="Wager: "+p;$("ddbox").style.display="none";$("mclue").style.display="block";$("revbtn").style.display="inline-block"}
+function showAns(){$("mans").classList.add("show");$("revbtn").style.display="none";$("apts").textContent=p;$("sbtns").innerHTML=T.map((t,i)=>`<div class="sgrp"><span>${t.n}</span><button class="plus" onclick="sc(${i},1)">+${p}</button><button class="minus" onclick="sc(${i},-1)">-${p}</button><button class="mpen" onclick="T[${i}].s-=100;dT()">Penalty -100</button></div>`).join("");$("sbox").classList.add("show")}
+function sc(i,d){T[i].s+=d*p;dT();if(d>0)closeMod()}
+function closeMod(){if(cc)cc.classList.add("used");$("modal").classList.remove("open");cc=null}
+function rst(){T.forEach(t=>t.s=0);dT();dB()}
+dT();dB();
+</script></body></html>
